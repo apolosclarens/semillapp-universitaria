@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>SemillApp Universitaria</title>
+<meta name="description" content="Trueque de semillas entre UPCH, U Lima, PUCP y U Pacífico.">
+<meta name="theme-color" content="#F2A413">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SemillApp"><meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap">
+<link rel="stylesheet" href="style.css">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+</head><body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <img src="icon-192.png" alt="" width="44" height="44">
+      <div><h1>Semill<em>App</em></h1><div class="sub">Trueque de semillas entre universidades</div></div>
+    </div>
+    <div class="hdr-right"><span class="mode" id="mode">Cargando…</span><span id="acct"></span>
+      <button class="me-btn" id="meBtn" aria-label="Perfil y ajustes"></button></div>
+  </header>
+
+  <div class="hero" id="heroWrap">
+    <canvas id="hero" aria-hidden="true"></canvas>
+    <div class="hero-text" id="heroText"></div>
+  </div>
+
+  <div id="install" hidden></div>
+
+  <div class="chips" id="chips" role="group" aria-label="Filtrar por campus"></div>
+  <div class="map" id="map"></div>
+
+  <section class="sec">
+    <div class="sec-head"><h2 id="feedTitle">Señales activas</h2><small id="feedCount"></small></div>
+    <div class="feed" id="feed"></div>
+  </section>
+
+  <section class="sec" id="bosques">
+    <div class="sec-head"><h2>Bosques <em>universitarios</em></h2><small>cada trueque cerrado planta algo</small></div>
+    <div class="rank" id="rank" role="group" aria-label="Elegir bosque"></div>
+    <div class="forest">
+      <div class="forest-top">
+        <div><div class="big" id="fCount">0</div><div class="lbl" id="fLbl">plantas</div></div>
+        <div class="lbl" id="fName" style="text-align:right"></div>
+      </div>
+      <canvas id="forest" width="720" height="470" tabindex="0" aria-label="Bosque isométrico de la universidad elegida"></canvas>
+      <div class="stages" aria-hidden="true"><span>Brote</span><span>Plántula</span><span>Planta</span><span>Florecida</span><span>Madura</span></div>
+      <div class="plant-info" id="pInfo">Toca una planta para ver de qué trueque nació.</div>
+      <div class="forest-foot">
+        <span class="note">Crece con los días y cuando se repite la especie.</span>
+        <button class="btn gold small" id="saveForest">Guardar imagen del bosque</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="note">Las señales se borran solas al vencer, como un estado. La ubicación es solo el campus que eliges: la app no usa tu GPS. Las entregas se hacen en el Punto Verde de cada universidad.</p>
+</div>
+
+<button class="fab" id="fab"><span aria-hidden="true">＋</span> Lanzar señal</button>
+<div id="layer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body></html>
