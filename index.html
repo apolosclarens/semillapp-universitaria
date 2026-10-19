@@ -23,6 +23,7 @@
       <button class="me-btn" id="meBtn" aria-label="Perfil y ajustes"></button></div>
   </header>
 
+  <main class="tab" data-tab="inicio" id="tab-inicio">
   <div class="hero" id="heroWrap">
     <canvas id="hero" aria-hidden="true"></canvas>
     <div class="hero-text" id="heroText"></div>
@@ -38,11 +39,18 @@
     <div class="feed" id="feed"></div>
   </section>
 
+  <p class="note">Las señales se borran solas al vencer, como un estado. La ubicación es solo el campus que eliges: la app no usa tu GPS. Las entregas se hacen en el Punto Verde de cada universidad.</p>
+  </main>
+
+  <main class="tab" data-tab="jardin" id="tab-jardin" hidden>
   <section class="sec" id="jardin">
     <div class="sec-head"><h2>Mi <em>jardín</em></h2><small>tus semillas, día a día</small></div>
     <div class="garden" id="garden"></div>
   </section>
 
+  </main>
+
+  <main class="tab" data-tab="bosques" id="tab-bosques" hidden>
   <section class="sec" id="bosques">
     <div class="sec-head"><h2>Bosques <em>universitarios</em></h2><small>cada trueque cerrado planta algo</small></div>
     <div class="rank" id="rank" role="group" aria-label="Elegir bosque"></div>
@@ -65,8 +73,14 @@
     <div class="premios" id="premios"></div>
   </section>
 
-  <p class="note">Las señales se borran solas al vencer, como un estado. La ubicación es solo el campus que eliges: la app no usa tu GPS. Las entregas se hacen en el Punto Verde de cada universidad.</p>
+  </main>
 </div>
+
+<nav class="tabbar" id="tabbar" aria-label="Secciones">
+  <button data-go="inicio" aria-current="page"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11 12 4l8.5 7"/><path d="M6 9.5V20h4.5v-5.5h3V20H18V9.5"/></svg><span>Inicio</span></button>
+  <button data-go="jardin"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21v-8"/><path d="M12 13c-4.5 0-7-2.5-7-7 4.5 0 7 2.5 7 7Z"/><path d="M12 15c0-3.5 2.2-6 6.5-6 0 3.6-2.4 6-6.5 6Z"/><path d="M7 21h10"/></svg><span>Mi jardín</span></button>
+  <button data-go="bosques"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 20v-3"/><path d="M8 4 3.5 13h9Z"/><path d="M16.5 20v-4"/><path d="M16.5 6c-2.8 0-4.5 2.3-4.5 5 0 2.6 2 4.8 4.5 4.8S21 13.6 21 11c0-2.7-1.7-5-4.5-5Z"/><path d="M2.5 20h19"/></svg><span>Bosques</span></button>
+</nav>
 
 <button class="fab" id="fab"><span aria-hidden="true">＋</span> Lanzar señal</button>
 <div id="layer"></div>
