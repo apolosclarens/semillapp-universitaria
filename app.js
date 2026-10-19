@@ -135,6 +135,21 @@ const SPECIES_TABLE = [
   ["lechuga","hortaliza","Lechuga","🥬",null],["zanahoria","hortaliza","Zanahoria","🥕","#F28C13"],["cebolla","hortaliza","Cebolla","🧅","#B0306A"],["zapallo","hortaliza","Zapallo","🎃","#F28C13"],["calabaza","hortaliza","Zapallo","🎃","#F28C13"]
 ];
 const ESPECIES = ["Rosa","Girasol","Orquídea","Tulipán","Pino limón"];
+/* Crecimiento real desde semilla: día en que empieza cada etapa (0..4) y nombre de cada etapa.
+   Fuentes: girasol 60–90 días a floración; rosa 6–12 sem de frío + 2–3 años a la 1.ª flor;
+   orquídea 4–7 años; tulipán 12–16 sem de frío + 4–7 años; pino limón ~23 cm por año. */
+const CRECE = {
+  "Girasol":  {dias:[0,10,25,50,75],      etapas:["Brote","Plántula","Planta","Botón floral","Florecido"], esplendor:"Florece a los 2–3 meses"},
+  "Rosa":     {dias:[0,90,180,450,900],   etapas:["Semilla en frío","Brote","Plántula","Rosal joven","Florecido"], esplendor:"Primera flor a los 2–3 años", frio:true},
+  "Orquídea": {dias:[0,180,550,1300,2200],etapas:["Protocormo","Brote","Plántula","Planta joven","Florecida"], esplendor:"Florece a los 5–7 años"},
+  "Tulipán":  {dias:[0,120,365,1100,2000],etapas:["Semilla en frío","Brote","Bulbito","Bulbo joven","Florecido"], esplendor:"Primera flor a los 4–7 años", frio:true},
+  "Pino limón":{dias:[0,30,120,400,1600], etapas:["Brote","Plántula","Arbolito","Árbol joven","Árbol de ~1 m"], esplendor:"Llega a ~1 m en unos 4–5 años"}
+};
+const DEF_CRECE={dias:[0,10,30,60,90],etapas:["Brote","Plántula","Planta","Florecida","Madura"],esplendor:""};
+const crece=sp=>CRECE[sp.name]||DEF_CRECE;
+function growthOf(sp,fecha){ const T=crece(sp).dias, d=Math.max(0,(Date.now()-fecha)/DAY); let st=0; for(let k=0;k<5;k++) if(d>=T[k]) st=k;
+  const fr=st>=4?0:(d-T[st])/(T[st+1]-T[st]); return {d,st,fr,g:Math.min(4,st+fr),total:Math.min(1,d/T[4]),T}; }
+function durDias(d){ if(d<1) return `${Math.max(1,Math.round(d*24))} h`; if(d<45) return `${Math.round(d)} ${Math.round(d)===1?"día":"días"}`; if(d<365) return `${Math.round(d/30)} meses`; const y=d/365; return `${(Math.round(y*2)/2).toString().replace(".",",")} ${y<1.25?"año":"años"}`; }
 const SUGGEST = ESPECIES;
 /* Fichas de cultivo de las especies más frecuentes para intercambio */
 const FICHAS = {
@@ -210,7 +225,7 @@ function plants(campus){
   list.sort((a,b)=>a.fecha-b.fecha);
   const seen={};
   list.forEach(p=>{ p.sp=species(p.especie); const k=p.sp.name; const before=seen[k]||0; seen[k]=before+1;
-    const age=(Date.now()-p.fecha)/DAY; p.g=Math.min(4,age/2+before); p.stage=Math.floor(p.g); });
+    const gr=growthOf(p.sp,p.fecha); p.g=gr.g; p.stage=gr.st; });
   return list;
 }
 
@@ -287,17 +302,21 @@ function waLink(tel,s,o){
 }
 
 /* ---------- bosque isométrico ---------- */
-const N=7, TW=44, TH=22, LW=360, LH=235, OX=180, OY=64, PS=1.5;
+const N=7, TW=44, TH=22, LW=360, LH=235, OX=180, OY=64, PS=1.22;
 const iso=(x,y)=>[OX+(x-y)*TW/2, OY+(x+y)*TH/2];
 function hash(str){ let h=2166136261; for(const ch of String(str)){ h^=ch.charCodeAt(0); h=Math.imul(h,16777619);} return (h>>>0)/4294967295; }
 const SIGN=[0,N-1];
-function cellsFor(campus){
-  const cells=[]; for(let x=0;x<N;x++)for(let y=0;y<N;y++){ if(x===SIGN[0]&&y===SIGN[1]) continue; const d=Math.hypot(x-(N-1)/2,y-(N-1)/2)+hash(campus+x+"_"+y)*1.2+((x+y)%2?4:0); cells.push({x,y,d}); }
+function cellsFor(campus){ // primero una cuadrícula espaciada (una planta sí, una no) para que no se tapen
+  const cells=[]; for(let x=0;x<N;x++)for(let y=0;y<N;y++){ if(x===SIGN[0]&&y===SIGN[1]) continue;
+    const tier=(x%2===0&&y%2===0)?0:((x+y)%2===0?1:2); cells.push({x,y,d:tier*10+Math.hypot(x-(N-1)/2,y-(N-1)/2)+hash(campus+x+"_"+y)*.8}); }
   return cells.sort((a,b)=>a.d-b.d);
 }
+const ALTURA={pino:4,girasol:3,orquidea:1.5,tulipan:1.5,rosa:1};
 function layout(campus){
   const ps=plants(campus), cells=cellsFor(campus), shownPs=ps.slice(-cells.length);
-  shownPs.forEach((p,i)=>{ const c=cells[i]; p.x=c.x; p.y=c.y; [p.sx,p.sy]=iso(c.x,c.y); p.sy+=TH/2; p.phase=hash(p.id)*6.28; });
+  const use=cells.slice(0,shownPs.length).sort((a,b)=>(a.x+a.y)-(b.x+b.y)||a.x-b.x); // fondo primero
+  const byH=shownPs.slice().sort((a,b)=>(ALTURA[b.sp.kind]||1)*(b.stage+1)-(ALTURA[a.sp.kind]||1)*(a.stage+1));
+  byH.forEach((p,i)=>{ const c=use[i]; p.x=c.x; p.y=c.y; [p.sx,p.sy]=iso(c.x,c.y); p.sy+=TH/2; p.phase=hash(p.id)*6.28; });
   return {all:ps, placed:shownPs.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y))};
 }
 const G={leaf:"#6E8B2F",dark:"#4F6B22",light:"#9DB04A",stem:"#5E7A26",trunk:"#7A5230",trunkD:"#5C3D22",outline:"#231F1F"};
@@ -309,13 +328,23 @@ function drawPlant(c,p,t,noShadow){
   // sombra
   if(!noShadow) ell(c,0,0,6+st*1.6,3+st*.8,0,"rgba(35,31,31,.18)");
   c.save(); c.rotate(Math.sin(t/900+p.phase)*.035*(st+1)/5);
-  if(st===0){ stem(c,7,1.4); ell(c,-3,-7,3,1.6,-.5,G.light); ell(c,3,-8,3,1.6,.5,G.leaf); c.restore(); return; }
+  if(st===0){ if(crece(p.sp).frio){ ell(c,0,-.6,1.6,1,0,"#6B4423"); circ(c,-2,-3,.5,"#CFE8F5"); circ(c,2.2,-4.2,.4,"#CFE8F5"); circ(c,.4,-5,.35,"#CFE8F5"); } else if(k==="orquidea"){ circ(c,0,-1.2,1.3,"#B8D27A"); ell(c,.9,-2.4,.7,1.1,.4,G.light); } else { stem(c,6,1.2); ell(c,-2.6,-6,2.6,1.4,-.5,G.light); ell(c,2.6,-6.8,2.6,1.4,.5,G.leaf); } c.restore(); return; }
   if(k==="girasol"){
-    const h=12+st*7; stem(c,h,1.6+st*.3); ell(c,-4,-h*.45,4.5,2,-.6,G.leaf); ell(c,4,-h*.6,4.5,2,.6,G.dark);
-    const R=2.2+st*1.3;
-    if(st===1){ circ(c,0,-h,2.6,G.light); }
-    else { for(let i=0;i<12;i++){ const a=i/12*6.283; ell(c,Math.cos(a)*R*1.25,-h+Math.sin(a)*R*1.25,R*.75,R*.32,a,"#F2A413"); }
-      circ(c,0,-h,R,"#6B4423",G.outline); }
+    const h=7+st*4.2; stem(c,h,1.2+st*.25);
+    if(st>=1){ ell(c,-3.2,-h*.42,3.6,1.6,-.55,G.leaf); ell(c,3.2,-h*.58,3.4,1.5,.55,G.dark); }
+    const R=1.6+st*1.05;
+    if(st===1){ circ(c,0,-h,1.9,G.light); ell(c,0,-h-1.2,1,1.4,0,G.leaf); }
+    else if(st===2){ for(let i=0;i<8;i++){ const a=i/8*6.283; ell(c,Math.cos(a)*1.6,-h+Math.sin(a)*1.6,1.2,.55,a,"#C9D35A"); } circ(c,0,-h,1.6,"#7E9A3A"); }
+    else if(st===3){ ell(c,0,-h+.4,R*.95,R*.8,0,"#7E9A3A"); for(let i=0;i<10;i++){ const a=i/10*6.283; ell(c,Math.cos(a)*R*.75,-h+Math.sin(a)*R*.6,R*.45,R*.22,a,i%2?"#9DB04A":"#6E8B2F"); } for(let i=0;i<7;i++){ const a=-2.6+i*.35; ell(c,Math.cos(a)*R*.55,-h+Math.sin(a)*R*.55,R*.3,R*.13,a,"#F2A413"); } circ(c,0,-h-R*.15,R*.38,"#5A3418"); }
+    else {
+      for(let i=0;i<16;i++){ const a=i/16*6.283+.2; ell(c,Math.cos(a)*R*1.45,-h+Math.sin(a)*R*1.32,R*.78,R*.3,a,"#E08E0B"); }
+      for(let i=0;i<16;i++){ const a=i/16*6.283; const gx=Math.cos(a)*R*1.3, gy=-h+Math.sin(a)*R*1.2;
+        c.save(); c.translate(gx,gy); c.rotate(a); const g=c.createLinearGradient(-R*.7,0,R*.7,0); g.addColorStop(0,"#F2A413"); g.addColorStop(1,"#FFD34D");
+        c.beginPath(); c.ellipse(0,0,R*.72,R*.27,0,0,6.283); c.fillStyle=g; c.fill(); c.restore(); }
+      circ(c,0,-h,R*1.02,"#3E2412"); circ(c,0,-h,R*.92,"#5A3418");
+      const n=Math.round(30+st*12); for(let i=0;i<n;i++){ const rr=R*.86*Math.sqrt(i/n), a=i*2.39996; circ(c,Math.cos(a)*rr,-h+Math.sin(a)*rr,.22+R*.045*(1-i/n*.5),i%3?"#8A5A1E":"#C08A2E"); }
+      circ(c,-R*.25,-h-R*.25,R*.25,"rgba(255,220,150,.18)");
+    }
   } else if(k==="flor"){
     const n=1+Math.min(st,3);
     for(let i=0;i<n;i++){ const dx=(i-(n-1)/2)*4, h=9+st*3.5+(i%2)*3; c.save(); c.translate(dx,0); stem(c,h,1.2);
@@ -340,12 +369,19 @@ function drawPlant(c,p,t,noShadow){
     const R=4+st*2.6; circ(c,-R*.55,-h-R*.3,R*.75,G.dark); circ(c,R*.55,-h-R*.3,R*.75,G.dark); circ(c,0,-h-R*.9,R*.85,G.leaf); circ(c,-R*.25,-h-R*1.1,R*.4,G.light);
     if(st>=3){ for(let i=0;i<(st-2)*4;i++){ const a=hash(p.id+i)*6.283, d=hash(p.id+"t"+i)*R*.75; circ(c,Math.cos(a)*d,-h-R*.6+Math.sin(a)*d*.6,1.4+st*.2,col||"#F2A413",G.outline);} }
   } else if(k==="rosa"){
-    const R0=4+st*1.9; stem(c,R0*.7,1.4,G.trunk);
-    for(let i=0;i<7+st;i++){ const a=hash(p.id+"r"+i)*6.283, d=hash(p.id+"q"+i)*R0; ell(c,Math.cos(a)*d*.9,-R0*1.15+Math.sin(a)*d*.6,2.2+st*.25,1.3+st*.15,a,i%2?G.dark:G.leaf); }
-    const n=st>=2?st+(st>=4?2:0):1;
-    for(let i=0;i<n;i++){ const a=hash(p.id+"f"+i)*6.283, d=hash(p.id+"g"+i)*R0*.75, x=Math.cos(a)*d, y=-R0*1.3+Math.sin(a)*d*.55, r=1.5+st*.35;
-      if(st<2){ ell(c,x,y,r*.6,r,0,G.light); continue; }
-      circ(c,x,y,r,col||"#C62828"); c.beginPath(); c.arc(x,y,r*.55,.4,4.2); c.strokeStyle="rgba(80,0,10,.55)"; c.lineWidth=.6; c.stroke(); circ(c,x-r*.15,y-r*.1,r*.22,"rgba(80,0,10,.5)"); }
+    const fl=p.sp.name==="Rosa"?(crece(p.sp).frio&&st===0):false;
+    if(st===0){ ell(c,0,-.6,1.6,1,0,"#6B4423"); if(fl){ circ(c,-2,-3,.5,"#CFE8F5"); circ(c,2,-4,.4,"#CFE8F5"); } c.restore(); return; }
+    const H=4+st*2.2;
+    stem(c,H,1.1,"#4F6B22"); if(st>=3){ c.save(); c.rotate(-.45); stem(c,H*.75,1,"#4F6B22"); c.restore(); c.save(); c.rotate(.5); stem(c,H*.7,1,"#4F6B22"); c.restore(); }
+    for(let i=0;i<3+st;i++){ const y=-H*(.25+.12*i), sd=i%2?1:-1; ell(c,sd*2.2,y,2,1,sd*.6,i%2?G.dark:G.leaf); }
+    const heads=st<2?[]:st===2?[[0,-H]]:st===3?[[0,-H],[-H*.32,-H*.72]]:[[0,-H],[-H*.34,-H*.7],[H*.34,-H*.66]];
+    if(st<2){ ell(c,0,-H,1,1.6,0,"#9DB04A"); circ(c,0,-H-1,.7,col||"#C62828"); }
+    heads.forEach(([x,y],j)=>{ const r=2.4+st*.45-(j?0.4:0);
+      ell(c,x-r*.55,y+r*.35,r*.65,r*.35,-.5,"#5F7D2A"); ell(c,x+r*.55,y+r*.35,r*.65,r*.35,.5,"#4F6B22");
+      for(let i=0;i<6;i++){ const a=i/6*6.283; ell(c,x+Math.cos(a)*r*.55,y+Math.sin(a)*r*.45,r*.62,r*.48,a,"#9E1B1B"); }
+      circ(c,x,y,r*.82,col||"#C62828");
+      for(let i=0;i<4;i++){ c.beginPath(); c.arc(x+(i%2?.2:-.2)*r,y-.1*r,r*(.7-i*.15),3.6+i*.9,6.2+i*.9); c.strokeStyle=i%2?"#7A1010":"#E04B3F"; c.lineWidth=.55; c.stroke(); }
+      circ(c,x,y-r*.05,r*.18,"#7A1010"); ell(c,x-r*.35,y-r*.4,r*.28,r*.14,-.5,"rgba(255,200,200,.45)"); });
   } else if(k==="orquidea"){
     ell(c,-4,-1.5,5.5,1.8,-.25,G.dark); ell(c,4,-1.8,5.5,1.8,.25,G.leaf); ell(c,0,-2.6,4,1.6,0,G.light);
     const h=8+st*4; c.beginPath(); c.moveTo(0,-2); c.bezierCurveTo(-1,-h,6+st,-h-4,9+st*1.5,-h*.6); c.lineWidth=1; c.strokeStyle="#6B7A3A"; c.stroke();
@@ -453,7 +489,7 @@ function myPlants(){
     if(t.autor===S.me) out.push({id:t.id+"a",especie:t.especie_a,campus:t.campus_a,partner:t.campus_b,fecha:t.fecha});
     if(t.receptor_b&&t.receptor_b===S.me) out.push({id:t.id+"b",especie:t.especie_b,campus:t.campus_b,partner:t.campus_a,fecha:t.fecha});
   });
-  out.forEach(p=>{ p.sp=species(p.especie); p.g=Math.min(4,(Date.now()-p.fecha)/DAY/2); p.stage=Math.floor(p.g); p.phase=hash(p.id)*6.28; });
+  out.forEach(p=>{ p.sp=species(p.especie); p.gr=growthOf(p.sp,p.fecha); p.g=p.gr.g; p.stage=p.gr.st; p.phase=hash(p.id)*6.28; });
   return out.sort((a,b)=>b.fecha-a.fecha);
 }
 function dur(ms){ const h=Math.max(0,ms)/H; if(h<1) return `${Math.max(1,Math.round(h*60))} min`; if(h<24) return `${Math.round(h)} h`; const d=Math.floor(h/24), r=Math.round(h-d*24); return r?`${d} d ${r} h`:`${d} d`; }
@@ -462,14 +498,15 @@ function renderGarden(){
   if(!ps.length){ GA=[]; el.innerHTML=`<div class="empty"><img class="pi-lg" src="${plantIcon("Girasol",56)}" alt=""><div><b style="color:var(--fg)">Aún no tienes plantas.</b><br>Cuando cierres tu primer trueque, aquí verás crecer tu semilla día a día: de brote a planta madura.</div></div>`; return; }
   const now=performance.now();
   GA=ps.map(p=>({p,start:prev[p.id]??now}));
-  el.innerHTML=ps.map((p,i)=>{ const names=stageNames(p.sp), st=p.stage, fr=p.g-st, nextAt=p.fecha+(st+1)*2*DAY;
+  el.innerHTML=ps.map((p,i)=>{ const names=stageNames(p.sp), st=p.stage, gr=p.gr, cr=crece(p.sp);
     return `<article class="gcard">
       <canvas class="gcv" data-i="${i}" width="280" height="280" aria-label="${esc(p.sp.name)} en etapa ${names[st]}"></canvas>
       <div class="gbody">
         <div class="gname">${esc(p.sp.name)}</div>
-        <div class="gstage">${names[st]}${st<4?` · ${Math.round(fr*100)}%`:""}</div>
-        <div class="gbar"><i style="width:${st>=4?100:Math.round(fr*100)}%"></i></div>
-        <div class="gnext">${st<4?`${names[st+1]} en ${dur(nextAt-Date.now())}`:"¡Llegó a su etapa final!"}</div>
+        <div class="gstage">${names[st]} · día ${Math.floor(gr.d)+1}</div>
+        <div class="gbar" title="Camino a su esplendor"><i style="width:${Math.max(2,Math.round(gr.total*100))}%"></i></div>
+        <div class="gnext">${st<4?(st===3?`${names[4]} en ~${durDias(gr.T[4]-gr.d)}`:`${names[st+1]} en ~${durDias(gr.T[st+1]-gr.d)} · esplendor en ~${durDias(gr.T[4]-gr.d)}`):"¡Llegó a su esplendor!"}</div>
+        <div class="gsplendor">${esc(cr.esplendor)}${cr.frio&&st===0?" · primero necesita semanas de frío para germinar":""}</div>
         <ol class="gsteps">${names.map((n,k)=>`<li class="${k<st?"done":k===st?"now":""}" title="${n}"></li>`).join("")}</ol>
         <div class="gmeta"><i class="cdot" style="--cc:${CAMPUS[p.campus]?.col};--ce:${CAMPUS[p.campus]?.edge}"></i>Trueque con ${esc(CAMPUS[p.partner]?.name||"")} · ${fecha(p.fecha)}</div>
         <button class="btn ghost small" data-replay="${i}">Ver crecer</button>
@@ -501,7 +538,7 @@ function renderForest(){
   showInfo(); paintForest(performance.now());
 }
 const STAGE_NAMES=["Brote","Plántula","Planta","Florecida","Madura"], TREE_STAGES=["Brote","Plántula","Arbolito","Árbol joven","Árbol"];
-const stageNames=sp=>sp.kind==="arbol"||sp.kind==="pino"||sp.kind==="magnolia"?TREE_STAGES:STAGE_NAMES;
+const stageNames=sp=>crece(sp).etapas;
 function showInfo(){
   const p=S.sel, el=$("#pInfo");
   if(!p){ el.textContent=plants(S.forest).length?"Toca una planta para ver de qué trueque nació.":"Este bosque aún está vacío: el primer trueque cerrado de esta universidad planta su primera semilla."; return; }
@@ -726,7 +763,7 @@ function settings(){
     <div class="set-group set-row"><div><div class="set-lbl">Animaciones</div><p class="note">Hojas, nubes, luciérnagas y plantas que se mecen.</p></div>
       <button type="button" class="switch" id="set-anim" role="switch" aria-checked="${cfg.anim}" aria-label="Animaciones"><i></i></button></div>
     ${A&&A.signOut?`<button class="btn ghost" id="set-out">Cerrar sesión</button>`:""}
-    <p class="note center">SemillApp 2.0 · proyecto estudiantil de trueque de semillas</p>
+    <p class="note center">SemillApp · versión 2.0</p>
     <div class="actions"><button class="btn gold" id="set-ok">Listo</button></div>`);
   const L=$("#layer");
   L.querySelectorAll("[data-tema]").forEach(b=>b.onclick=()=>{ AMB.set({tema:b.dataset.tema}); L.querySelectorAll("[data-tema]").forEach(x=>x.setAttribute("aria-pressed",x===b)); });
@@ -761,13 +798,13 @@ window.SemillAppLocal=function(opts){
       {id:"o2",senal_id:"d3",ofrece:"Girasol enano (semillas)",campus:"pucp",autor:"demo",creado:now-.5*H,estado:"aceptada"}
     ],
     trueques:[
-      T("upch","Girasol","pucp","Rosa",12),T("upch","Rosa","ulima","Girasol",10),T("upch","Pino limón","up","Tulipán",9),
-      T("upch","Orquídea","upch","Girasol",7),T("upch","Tulipán","pucp","Orquídea",5),T("upch","Girasol","up","Rosa",3),
-      T("upch","Pino limón","ulima","Pino limón",2),T("upch","Orquídea","pucp","Girasol",1),T("upch","Girasol","ulima","Tulipán",0.2),
-      T("pucp","Rosa","ulima","Girasol",8),T("pucp","Pino limón","up","Rosa",6),T("pucp","Tulipán","ulima","Orquídea",4),
-      T("pucp","Pino limón","up","Pino limón",1.5),T("ulima","Rosa","up","Girasol",11),T("ulima","Orquídea","pucp","Tulipán",3),
-      T("up","Girasol","pucp","Rosa",2.5),T("up","Tulipán","ulima","Pino limón",0.6),
-      {...T("upch","Girasol","pucp","Rosa",5.3),autor:"local"},{...T("upch","Orquídea","ulima","Tulipán",0.7),autor:"local"},{...T("upch","Pino limón","up","Girasol",8.6),autor:"local"}
+      T("upch","Girasol","pucp","Girasol",90),T("upch","Rosa","ulima","Rosa",950),T("upch","Pino limón","up","Pino limón",1700),
+      T("upch","Orquídea","upch","Tulipán",2300),T("upch","Tulipán","pucp","Girasol",1200),T("upch","Girasol","up","Rosa",40),
+      T("upch","Rosa","ulima","Orquídea",500),T("upch","Girasol","pucp","Pino limón",18),T("upch","Pino limón","ulima","Tulipán",420),
+      T("pucp","Rosa","ulima","Girasol",1000),T("pucp","Pino limón","up","Rosa",700),T("pucp","Tulipán","ulima","Orquídea",2100),
+      T("pucp","Girasol","up","Pino limón",80),T("ulima","Rosa","up","Girasol",60),T("ulima","Orquídea","pucp","Tulipán",1400),
+      T("up","Girasol","pucp","Rosa",30),T("up","Tulipán","ulima","Pino limón",200),
+      {...T("upch","Girasol","pucp","Rosa",52),autor:"local"},{...T("upch","Orquídea","ulima","Tulipán",400),autor:"local"},{...T("upch","Pino limón","up","Girasol",130),autor:"local"}
     ],
     perfiles:[]
   };

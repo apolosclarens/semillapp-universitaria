@@ -287,3 +287,6 @@ h2 em{color:var(--gold)}
 .gmeta{font-size:.74rem;color:var(--muted);display:flex;align-items:center}
 .pi-lg{width:56px;height:56px}
 @media (max-width:360px){.gcard{grid-template-columns:104px 1fr}.gcv{width:104px;height:104px}}
+
+.gsplendor{font-size:.76rem;color:#8A6A2E;font-style:italic}
+:root[data-theme="dark"] .gsplendor{color:#E9C77E}
