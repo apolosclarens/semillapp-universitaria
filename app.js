@@ -114,15 +114,17 @@ applyTheme(); setInterval(applyTheme,60000);
 /* SemillApp — núcleo de interfaz (compartido por la versión en Claude y la app instalable) */
 (function(){
 const CAMPUS = {
-  upch:{name:"UPCH", ab:"UPCH", full:"Cayetano Heredia", x:208, y:68},
-  pucp:{name:"PUCP", ab:"PUCP", full:"PUCP", x:162, y:158},
-  up:{name:"U Pacífico", ab:"UP", full:"U del Pacífico", x:226, y:186},
-  ulima:{name:"U Lima", ab:"UL", full:"U de Lima", x:380, y:190}
+  upch:{name:"UPCH", ab:"UPCH", full:"Cayetano Heredia", x:208, y:68, col:"#C62828", ink:"#FFFFFF", edge:"#8E1A1A"},
+  pucp:{name:"PUCP", ab:"PUCP", full:"PUCP", x:162, y:158, col:"#002060", ink:"#FFFFFF", edge:"#5B7BC4"},
+  up:{name:"U Pacífico", ab:"UP", full:"U del Pacífico", x:226, y:186, col:"#FFFFFF", ink:"#001A47", edge:"#001A47"},
+  ulima:{name:"U Lima", ab:"UL", full:"U de Lima", x:380, y:190, col:"#FF7300", ink:"#FFFFFF", edge:"#B34F00"}
 };
 /* [palabra clave, tipo de planta, nombre, emoji, color de flor/fruto] */
 const SPECIES_TABLE = [
-  ["girasol","girasol","Girasol","🌻","#F2A413"],["lavanda","flor","Lavanda","🪻","#8E6CC0"],["rosa","flor","Rosa","🌹","#C62828"],
-  ["tulip","flor","Tulipán","🌷","#E35D8F"],["manzanilla","flor","Manzanilla","🌼","#FFFFFF"],["cempas","flor","Cempasúchil","🌼","#F28C13"],
+  ["girasol","girasol","Girasol","","#F2A413"],["rosa","rosa","Rosa","","#C62828"],["rosal","rosa","Rosa","","#C62828"],
+  ["orquí","orquidea","Orquídea","","#D9739F"],["orqui","orquidea","Orquídea","","#D9739F"],["phalaen","orquidea","Orquídea","","#D9739F"],
+  ["tulip","tulipan","Tulipán","","#E0484F"],["magnolia","magnolia","Magnolia","","#F7E6EC"],
+  ["pino lim","pino","Pino limón","","#D7E36B"],["ciprés lim","pino","Pino limón","","#D7E36B"],["cipres lim","pino","Pino limón","","#D7E36B"],["lavanda","flor","Lavanda","","#8E6CC0"],["manzanilla","flor","Manzanilla","🌼","#FFFFFF"],["cempas","flor","Cempasúchil","🌼","#F28C13"],
   ["tomate","fruto","Tomate","🍅","#C62828"],["ají amarillo","fruto","Ají amarillo","🌶️","#F2A413"],["aji amarillo","fruto","Ají amarillo","🌶️","#F2A413"],
   ["ají","fruto","Ají","🌶️","#C62828"],["aji","fruto","Ají","🌶️","#C62828"],["rocoto","fruto","Rocoto","🌶️","#C62828"],["pimiento","fruto","Pimiento","🫑","#C62828"],["fresa","fruto","Fresa","🍓","#C62828"],
   ["albahaca","hierba","Albahaca","🌿",null],["culantro","hierba","Culantro","🌿",null],["cilantro","hierba","Culantro","🌿",null],["hierbabuena","hierba","Hierbabuena","🌿",null],
@@ -132,7 +134,17 @@ const SPECIES_TABLE = [
   ["frijol","hierba","Frijol","🫘",null],["pallar","hierba","Pallar","🫘",null],["arveja","hierba","Arveja","🫛",null],["haba","hierba","Haba","🫛",null],
   ["lechuga","hortaliza","Lechuga","🥬",null],["zanahoria","hortaliza","Zanahoria","🥕","#F28C13"],["cebolla","hortaliza","Cebolla","🧅","#B0306A"],["zapallo","hortaliza","Zapallo","🎃","#F28C13"],["calabaza","hortaliza","Zapallo","🎃","#F28C13"]
 ];
-const SUGGEST = ["Girasol","Tomate cherry","Albahaca","Culantro","Ají amarillo","Rocoto","Hierbabuena","Lavanda","Maíz morado","Quinua","Kiwicha","Zapallo loche","Frijol canario","Palta","Lechuga","Huacatay"];
+const ESPECIES = ["Rosa","Girasol","Orquídea","Tulipán","Pino limón"];
+const SUGGEST = ESPECIES;
+/* Fichas de cultivo de las especies más frecuentes para intercambio */
+const FICHAS = {
+  "Rosa":{nivel:"Fácil de conseguir",plantar:"Esquejes o plantones; también semillas.",clima:"Depende de la variedad; muchas se adaptan a Lima.",consejo:"Un rosal en maceta es una buena opción para comenzar."},
+  "Girasol":{nivel:"Fácil desde semilla",plantar:"Semillas.",clima:"Cálido y soleado.",consejo:"Elige una variedad enana si lo cultivarás en maceta."},
+  "Orquídea":{nivel:"Mejor como planta joven",plantar:"Planta joven o ejemplar de vivero.",clima:"Depende de la especie; las Phalaenopsis suelen cultivarse en interiores luminosos.",consejo:"No conviene empezar con semillas en casa: su germinación requiere condiciones especializadas."},
+  "Tulipán":{nivel:"Necesita frío",plantar:"Bulbos, no semillas, si buscas una floración relativamente rápida.",clima:"Necesita un período de frío adecuado.",consejo:"En Lima cuesta lograr una buena floración: consigue bulbos preparados para cultivo."},
+  "Magnolia":{nivel:"Árbol o arbusto grande",plantar:"Plantón de vivero o semillas.",clima:"Varía según la especie; algunas prefieren suelos húmedos y ligeramente ácidos.",consejo:"Necesita espacio para desarrollarse como árbol o arbusto grande."},
+  "Pino limón":{nivel:"Paciencia: crece lento desde semilla",plantar:"Semillas o plantón.",clima:"Sol o media sombra; se adapta bien al clima templado de Lima.",consejo:"Ideal en maceta: riego moderado sin encharcar. Sus hojas verde-doradas huelen a limón al tocarlas."}
+};
 function species(text){
   const t=(text||"").toLowerCase();
   const m=SPECIES_TABLE.find(r=>t.includes(r[0]));
@@ -141,6 +153,18 @@ function species(text){
   return {kind:"hierba",name:clean.charAt(0).toUpperCase()+clean.slice(1),emoji:"🌱",color:null};
 }
 const H=3600e3, DAY=24*H;
+const ICONS={};
+function plantIcon(name,px){
+  const sp=species(name), key=sp.name+"|"+px; if(ICONS[key]) return ICONS[key];
+  const W=240, big=document.createElement("canvas"); big.width=big.height=W; const g=big.getContext("2d");
+  g.translate(W/2,W*.92); g.scale(3,3);
+  try{ drawPlant(g,{id:"icon-"+sp.name,stage:sp.kind==="magnolia"||sp.kind==="arbol"?3:4,sp,phase:0},0,true); }catch(e){}
+  const d=g.getImageData(0,0,W,W).data; let x0=W,y0=W,x1=0,y1=0;
+  for(let y=0;y<W;y++)for(let x=0;x<W;x++){ if(d[(y*W+x)*4+3]>8){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
+  const dpr=Math.min(2,window.devicePixelRatio||1), S=Math.round(px*dpr), c=document.createElement("canvas"); c.width=c.height=S; const x=c.getContext("2d");
+  if(x1>x0){ const bw=x1-x0+1, bh=y1-y0+1, f=S*.94/Math.max(bw,bh); x.drawImage(big,x0,y0,bw,bh,(S-bw*f)/2,(S-bh*f)/2,bw*f,bh*f); }
+  return ICONS[key]=c.toDataURL();
+}
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -186,7 +210,7 @@ function plants(campus){
   list.sort((a,b)=>a.fecha-b.fecha);
   const seen={};
   list.forEach(p=>{ p.sp=species(p.especie); const k=p.sp.name; const before=seen[k]||0; seen[k]=before+1;
-    const age=(Date.now()-p.fecha)/DAY; p.stage=Math.min(4,Math.floor(age/2)+before); });
+    const age=(Date.now()-p.fecha)/DAY; p.g=Math.min(4,age/2+before); p.stage=Math.floor(p.g); });
   return list;
 }
 
@@ -194,26 +218,27 @@ function plants(campus){
 function renderChips(){
   const c={}; active().forEach(s=>c[s.campus]=(c[s.campus]||0)+1);
   const opts=[["all","Todas",active().length],...Object.entries(CAMPUS).map(([k,v])=>[k,v.name,c[k]||0])];
-  $("#chips").innerHTML=opts.map(([k,n,cnt])=>`<button class="chip" aria-pressed="${S.filter===k}" data-f="${k}">${n} · ${cnt}</button>`).join("");
+  $("#chips").innerHTML=opts.map(([k,n,cnt])=>`<button class="chip" aria-pressed="${S.filter===k}" data-f="${k}" ${CAMPUS[k]?`style="--cc:${CAMPUS[k].col};--ci:${CAMPUS[k].ink};--ce:${CAMPUS[k].edge}"`:""}>${CAMPUS[k]?`<i class="cdot"></i>`:""}${n} · ${cnt}</button>`).join("");
 }
 function renderMap(){
   const c={}; active().forEach(s=>c[s.campus]=(c[s.campus]||0)+1);
   const pins=Object.entries(CAMPUS).map(([k,v])=>{
     const n=c[k]||0, sel=S.filter===k, dim=S.filter!=="all"&&!sel, right=k==="ulima", below=k==="up";
     return `<g class="pin" data-f="${k}" role="button" tabindex="0" aria-label="${v.name}: ${n} señales" opacity="${dim?.35:1}">
-      ${n?`<circle class="pulse" cx="${v.x}" cy="${v.y}" r="11" fill="#F2A413"/>`:""}
-      <circle cx="${v.x}" cy="${v.y}" r="${sel?15:13}" fill="${sel?"#231F1F":"#F2A413"}" stroke="#231F1F" stroke-width="2"/>
-      <text x="${v.x}" y="${v.y+4}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="11" font-weight="700" fill="${sel?"#F2A413":"#231F1F"}">${n}</text>
-      <text x="${below?v.x:right?v.x-19:v.x+19}" y="${below?v.y+31:v.y+4}" text-anchor="${below?"middle":right?"end":"start"}" font-family="Plus Jakarta Sans, sans-serif" font-size="12.5" font-weight="800" fill="var(--fg)" paint-order="stroke" stroke="var(--land)" stroke-width="3.5">${v.name}</text>
+      ${n?`<circle class="pulse" cx="${v.x}" cy="${v.y}" r="11" fill="${k==="up"?"#7FA2D9":v.col}"/>`:""}
+      ${sel?`<circle cx="${v.x}" cy="${v.y}" r="19" fill="none" stroke="${v.edge}" stroke-width="1.5" stroke-dasharray="3 3"/>`:""}
+      <circle cx="${v.x}" cy="${v.y}" r="${sel?15:13}" fill="${v.col}" stroke="${v.edge}" stroke-width="${sel?3:2}"/>
+      <text x="${v.x}" y="${v.y+4}" text-anchor="middle" font-family="Jost, sans-serif" font-size="11" font-weight="700" fill="${v.ink}">${n}</text>
+      <text x="${below?v.x:right?v.x-19:v.x+19}" y="${below?v.y+31:v.y+4}" text-anchor="${below?"middle":right?"end":"start"}" font-family="Jost, sans-serif" font-size="12.5" font-weight="800" fill="var(--fg)" paint-order="stroke" stroke="var(--land)" stroke-width="3.5">${v.name}</text>
     </g>`;}).join("");
   $("#map").innerHTML=`<svg viewBox="0 0 440 262" role="img" aria-label="Mapa esquemático de Lima con los cuatro campus">
     <rect width="440" height="262" fill="var(--land)"/>
     <path d="M0,0 L44,0 L52,60 L58,112 L38,136 L70,150 L120,180 L180,212 L226,262 L0,262 Z" fill="var(--sea)"/>
     <path d="M440,66 C370,78 310,92 255,100 S130,104 56,110" fill="none" stroke="var(--river)" stroke-width="4" stroke-linecap="round"/>
     <path d="M150,198 L250,198 L330,193 L440,188" fill="none" stroke="var(--river)" stroke-width="2.5" stroke-dasharray="1 6" stroke-linecap="round"/>
-    <text x="16" y="232" font-family="Plus Jakarta Sans, sans-serif" font-size="10.5" font-style="italic" fill="var(--muted)">Océano Pacífico</text>
-    <text x="330" y="80" font-family="Plus Jakarta Sans, sans-serif" font-size="10" font-style="italic" fill="var(--muted)">Río Rímac</text>
-    <text x="292" y="210" font-family="Plus Jakarta Sans, sans-serif" font-size="9.5" fill="var(--muted)">Av. Javier Prado</text>
+    <text x="16" y="232" font-family="Jost, sans-serif" font-size="10.5" font-style="italic" fill="var(--muted)">Océano Pacífico</text>
+    <text x="330" y="80" font-family="Jost, sans-serif" font-size="10" font-style="italic" fill="var(--muted)">Río Rímac</text>
+    <text x="292" y="210" font-family="Jost, sans-serif" font-size="9.5" fill="var(--muted)">Av. Javier Prado</text>
     ${pins}</svg><span class="legend">LIMA · SOLO CAMPUS, SIN GPS</span>`;
 }
 function renderFeed(){
@@ -242,11 +267,12 @@ function renderFeed(){
     }).join(""):`<div class="offer"><span class="timer">Todavía nadie ofertó.</span></div>`}
     ${mine?`<div class="offer"><span></span><button class="btn ghost small" data-act="del" data-id="${s.id}">Borrar señal</button></div>`:""}</div>`:"";
     return `<article class="card">
-      <div class="ring" aria-hidden="true"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="21" fill="none" stroke="var(--line)" stroke-width="2.5"/><circle cx="23" cy="23" r="21" fill="none" stroke="${soon?"#C62828":"#F2A413"}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" transform="rotate(-90 23 23)"/></svg>${sp.emoji}</div>
+      <div class="ring" aria-hidden="true"><svg viewBox="0 0 46 46"><circle cx="23" cy="23" r="21" fill="none" stroke="var(--line)" stroke-width="2.5"/><circle cx="23" cy="23" r="21" fill="none" stroke="${soon?"#C62828":"#F2A413"}" stroke-width="3" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}" transform="rotate(-90 23 23)"/></svg><img class="pi" src="${plantIcon(s.especie,40)}" alt=""></div>
       <div class="body">
-        <div class="top"><span class="tag ${s.tipo}">${s.tipo==="tengo"?"Tengo":"Busco"}</span><span class="camp">${esc(v.name)}</span>${s.autor==="demo"?`<span class="tag ej">Ejemplo</span>`:""}</div>
-        <div class="title">${esc(s.especie)}${s.cantidad?` <span style="font-weight:500;color:var(--muted)">· ${esc(s.cantidad)}</span>`:""}</div>
+        <div class="top"><span class="tag ${s.tipo}">${s.tipo==="tengo"?"Tengo":"Busco"}</span><span class="camp"><i class="cdot" style="--cc:${v.col};--ce:${v.edge}"></i>${esc(v.name)}</span>${s.autor==="demo"?`<span class="tag ej">Ejemplo</span>`:""}</div>
+        <div class="title">${esc(s.especie)}${s.cantidad?` <span class="qty">· ${esc(s.cantidad)}</span>`:""}</div>
         <div class="cambio">${s.tipo==="tengo"?"Cambio por":"Ofrezco"}: <b>${esc(s.cambio||"lo que tengas")}</b></div>
+        ${FICHAS[sp.name]?`<details class="ficha"><summary>Cómo plantar ${esc(sp.name.toLowerCase())}</summary><dl><dt>Dificultad</dt><dd>${esc(FICHAS[sp.name].nivel)}</dd><dt>Clima</dt><dd>${esc(FICHAS[sp.name].clima)}</dd><dt>Consejo</dt><dd>${esc(FICHAS[sp.name].consejo)}</dd></dl></details>`:""}
         <div class="meta"><span class="timer with-av ${soon?"soon":""}">${av(s.autor,22)}<span>${esc(who(s))} · ${ago(s.creado)} · ${left(s.expira)}</span></span>
           ${!mine&&!closed?`<button class="btn small" data-act="offer" data-id="${s.id}">${s.tipo==="tengo"?"Ofrecer a cambio":"Yo tengo"}</button>`:""}
           ${!mine&&closed?`<span class="timer">${done?"Trueque cerrado":"En coordinación"}</span>`:""}
@@ -278,10 +304,10 @@ const G={leaf:"#6E8B2F",dark:"#4F6B22",light:"#9DB04A",stem:"#5E7A26",trunk:"#7A
 function ell(c,x,y,rx,ry,rot,fill){ c.beginPath(); c.ellipse(x,y,rx,ry,rot||0,0,6.283); c.fillStyle=fill; c.fill(); }
 function circ(c,x,y,r,fill,stroke){ c.beginPath(); c.arc(x,y,r,0,6.283); c.fillStyle=fill; c.fill(); if(stroke){c.lineWidth=.6;c.strokeStyle=stroke;c.stroke();} }
 function stem(c,h,w,col){ c.beginPath(); c.moveTo(0,0); c.quadraticCurveTo(1.2,-h/2,0,-h); c.lineWidth=w; c.strokeStyle=col||G.stem; c.lineCap="round"; c.stroke(); }
-function drawPlant(c,p,t){
+function drawPlant(c,p,t,noShadow){
   const st=p.stage, k=p.sp.kind, col=p.sp.color, r=hash(p.id);
   // sombra
-  ell(c,0,0,6+st*1.6,3+st*.8,0,"rgba(35,31,31,.18)");
+  if(!noShadow) ell(c,0,0,6+st*1.6,3+st*.8,0,"rgba(35,31,31,.18)");
   c.save(); c.rotate(Math.sin(t/900+p.phase)*.035*(st+1)/5);
   if(st===0){ stem(c,7,1.4); ell(c,-3,-7,3,1.6,-.5,G.light); ell(c,3,-8,3,1.6,.5,G.leaf); c.restore(); return; }
   if(k==="girasol"){
@@ -313,6 +339,38 @@ function drawPlant(c,p,t){
     const h=7+st*5, w=1.6+st*.7; c.beginPath(); c.moveTo(-w,0); c.lineTo(-w*.6,-h); c.lineTo(w*.6,-h); c.lineTo(w,0); c.closePath(); c.fillStyle=G.trunk; c.fill();
     const R=4+st*2.6; circ(c,-R*.55,-h-R*.3,R*.75,G.dark); circ(c,R*.55,-h-R*.3,R*.75,G.dark); circ(c,0,-h-R*.9,R*.85,G.leaf); circ(c,-R*.25,-h-R*1.1,R*.4,G.light);
     if(st>=3){ for(let i=0;i<(st-2)*4;i++){ const a=hash(p.id+i)*6.283, d=hash(p.id+"t"+i)*R*.75; circ(c,Math.cos(a)*d,-h-R*.6+Math.sin(a)*d*.6,1.4+st*.2,col||"#F2A413",G.outline);} }
+  } else if(k==="rosa"){
+    const R0=4+st*1.9; stem(c,R0*.7,1.4,G.trunk);
+    for(let i=0;i<7+st;i++){ const a=hash(p.id+"r"+i)*6.283, d=hash(p.id+"q"+i)*R0; ell(c,Math.cos(a)*d*.9,-R0*1.15+Math.sin(a)*d*.6,2.2+st*.25,1.3+st*.15,a,i%2?G.dark:G.leaf); }
+    const n=st>=2?st+(st>=4?2:0):1;
+    for(let i=0;i<n;i++){ const a=hash(p.id+"f"+i)*6.283, d=hash(p.id+"g"+i)*R0*.75, x=Math.cos(a)*d, y=-R0*1.3+Math.sin(a)*d*.55, r=1.5+st*.35;
+      if(st<2){ ell(c,x,y,r*.6,r,0,G.light); continue; }
+      circ(c,x,y,r,col||"#C62828"); c.beginPath(); c.arc(x,y,r*.55,.4,4.2); c.strokeStyle="rgba(80,0,10,.55)"; c.lineWidth=.6; c.stroke(); circ(c,x-r*.15,y-r*.1,r*.22,"rgba(80,0,10,.5)"); }
+  } else if(k==="orquidea"){
+    ell(c,-4,-1.5,5.5,1.8,-.25,G.dark); ell(c,4,-1.8,5.5,1.8,.25,G.leaf); ell(c,0,-2.6,4,1.6,0,G.light);
+    const h=8+st*4; c.beginPath(); c.moveTo(0,-2); c.bezierCurveTo(-1,-h,6+st,-h-4,9+st*1.5,-h*.6); c.lineWidth=1; c.strokeStyle="#6B7A3A"; c.stroke();
+    if(st>=2){ const n=st; for(let i=0;i<n;i++){ const u=.45+i/(n+1)*.6, x=-1+(10+st*1.5)*u*u, y=-2-(h+2)*Math.sin(Math.PI*u*.85)+ (u>.7?(u-.7)*h:0);
+      for(let j=0;j<5;j++){ const a=j/5*6.283-1.57; ell(c,x+Math.cos(a)*1.9,y+Math.sin(a)*1.9,1.7,1.1,a,"#FBEFF5"); }
+      circ(c,x,y+.6,1.1,col||"#D9739F"); circ(c,x,y-.3,.5,"#F2A413"); } }
+    else ell(c,4,-h*.7,1,1.6,0,G.light);
+  } else if(k==="tulipan"){
+    const n=1+Math.min(st,3); ell(c,-3,-4,1.6,5,-.35,G.leaf); ell(c,3,-4,1.6,5,.35,G.dark);
+    for(let i=0;i<n;i++){ const dx=(i-(n-1)/2)*3.6, h=9+st*3.2+(i%2)*2.5; c.save(); c.translate(dx,0); stem(c,h,1.2);
+      if(st>=2){ const cc=i%3===1?"#F2A413":(col||"#E0484F"); c.beginPath(); c.moveTo(-2.4,-h); c.quadraticCurveTo(-2.6,-h+3.2,0,-h+3.4); c.quadraticCurveTo(2.6,-h+3.2,2.4,-h); c.lineTo(1.2,-h-1.6); c.lineTo(0,-h-.4); c.lineTo(-1.2,-h-1.6); c.closePath(); c.fillStyle=cc; c.fill(); c.lineWidth=.5; c.strokeStyle="rgba(35,31,31,.5)"; c.stroke(); }
+      else ell(c,0,-h,1.2,2,0,G.light); c.restore(); }
+  } else if(k==="pino"){
+    const h=8+st*6.5, w=2.2+st*1.7; c.fillStyle=G.trunk; c.fillRect(-1,-3,2,3);
+    const tiers=2+Math.min(st,3);
+    for(let i=0;i<tiers;i++){ const y0=-2-i*(h/tiers)*.82, y1=y0-h/tiers*1.35, ww=w*(1-i/(tiers+.6));
+      c.beginPath(); c.moveTo(-ww,y0); c.quadraticCurveTo(0,y0+1.2,ww,y0); c.lineTo(0,y1); c.closePath(); c.fillStyle=i%2?"#C9DA5A":"#B4C94A"; c.fill();
+      c.beginPath(); c.moveTo(0,y1); c.lineTo(ww*.95,y0); c.quadraticCurveTo(ww*.4,y0+.6,0,y0+.7); c.closePath(); c.fillStyle="rgba(120,140,30,.35)"; c.fill(); }
+    if(st>=3){ for(let i=0;i<st*2;i++){ const yy=-3-hash(p.id+"p"+i)*h, xx=(hash(p.id+"x"+i)-.5)*w*(1+yy/h)*1.4; circ(c,xx,yy,.6,"#F4F7B0"); } }
+  } else if(k==="magnolia"){
+    const h=7+st*5, w=1.5+st*.6; c.beginPath(); c.moveTo(-w,0); c.lineTo(-w*.5,-h); c.lineTo(w*.5,-h); c.lineTo(w,0); c.closePath(); c.fillStyle=G.trunk; c.fill();
+    const R=4+st*2.5; circ(c,-R*.55,-h-R*.3,R*.72,"#5F7D2A"); circ(c,R*.55,-h-R*.3,R*.72,"#5F7D2A"); circ(c,0,-h-R*.9,R*.82,"#7E9A3A");
+    const n=st>=2?(st-1)*3:0;
+    for(let i=0;i<n;i++){ const a=hash(p.id+"m"+i)*6.283, d=hash(p.id+"n"+i)*R*.8, x=Math.cos(a)*d, y=-h-R*.6+Math.sin(a)*d*.6, r=1.5+st*.3;
+      ell(c,x-r*.45,y,r*.55,r,-.35,"#FFFFFF"); ell(c,x+r*.45,y,r*.55,r,.35,"#FFFFFF"); ell(c,x,y-r*.15,r*.5,r*1.05,0,col||"#F7E6EC"); ell(c,x,y+r*.55,r*.55,r*.3,0,"#C9709A"); }
   } else if(k==="hortaliza"){
     const R=2.5+st*1.4;
     for(let i=0;i<5+st;i++){ const a=i/(5+st)*6.283; ell(c,Math.cos(a)*R*.7,-R*.6+Math.sin(a)*R*.35,R*.7,R*.45,a,i%2?G.leaf:G.light); }
@@ -339,19 +397,24 @@ function drawIsland(c,campus,t,surface){
   // letrero del Punto Verde
   const [sx,sy0]=iso(SIGN[0],SIGN[1]), sy=sy0+TH/2;
   c.fillStyle=G.trunkD; c.fillRect(sx-1,sy-14,2,14);
-  c.fillStyle="#F2A413"; c.strokeStyle=G.outline; c.lineWidth=1; c.beginPath(); c.rect(sx-14,sy-24,28,11); c.fill(); c.stroke();
-  c.fillStyle=G.outline; c.font="700 7px JetBrains Mono, monospace"; c.textAlign="center"; c.fillText(CAMPUS[campus].ab,sx,sy-16.5);
+  c.fillStyle=CAMPUS[campus].col; c.strokeStyle=CAMPUS[campus].edge; c.lineWidth=1; c.beginPath(); c.rect(sx-14,sy-24,28,11); c.fill(); c.stroke();
+  c.fillStyle=CAMPUS[campus].ink; c.font="700 7px Jost, sans-serif"; c.textAlign="center"; c.fillText(CAMPUS[campus].ab,sx,sy-16.5);
 }
 function drawForest(c,campus,t,surface,sel){
   const L=layout(campus); drawIsland(c,campus,t,surface);
-  L.placed.forEach(p=>{ c.save(); c.translate(p.sx,p.sy); if(sel===p.id){ ell(c,0,0,15,7.5,0,"rgba(242,164,19,.6)"); } c.scale(PS,PS); drawPlant(c,p,t); c.restore(); });
+  const t0=FA.campus===campus?FA.start:-1e9;
+  L.placed.forEach((p,i)=>{ const pr=Math.max(0,Math.min(1,(t-t0-i*120)/1500)), e3=1-Math.pow(1-pr,3), ga=Math.max(.001,(p.g??p.stage)*e3);
+    if(pr<=0) return; const st=Math.min(4,Math.floor(ga)), fr=ga-st, sc=PS*(st>=4?1:.8+.2*fr)*(pr<1?Math.min(1,.4+pr):1);
+    c.save(); c.translate(p.sx,p.sy); if(sel===p.id){ ell(c,0,0,15,7.5,0,"rgba(242,164,19,.6)"); } c.scale(sc,sc); drawPlant(c,{...p,stage:st},t);
+    if(pr<1&&fr<.18&&st>0) sparkle(c,t,p.id,8+st*7); c.restore(); });
   const e=AMB.env();
   if(e.night){ c.fillStyle="rgba(12,18,48,.38)"; c.fillRect(0,0,LW,LH); } else if(e.phase==="atardecer"){ c.fillStyle="rgba(233,119,58,.10)"; c.fillRect(0,0,LW,LH); }
   if(e.clima!=="despejado"){ c.fillStyle=e.clima==="lluvia"?"rgba(40,50,60,.16)":"rgba(200,205,210,.12)"; c.fillRect(0,0,LW,LH); }
   AMB.fireflies(c,LW,LH,t,e,12,.8,OY+20); AMB.leaves(c,LW,LH,t,e,7,.9); AMB.rain(c,LW,LH,t,e,.8);
   return L;
 }
-let FL=null, raf=0, lastDraw=0;
+let FL=null, raf=0, lastDraw=0; const FA={campus:null,start:0};
+function sparkle(c,t,id,h){ for(let i=0;i<6;i++){ const a=i/6*6.283+t/400, r=5+Math.sin(t/120+i)*2; c.fillStyle=`rgba(242,164,19,${.5+.5*Math.sin(t/90+i)})`; c.beginPath(); c.arc(Math.cos(a)*r,-h+Math.sin(a)*r*.6,.9,0,6.283); c.fill(); } }
 function forestCanvas(){
   const cv=$("#forest"); if(!cv) return null;
   const w=Math.max(280,cv.clientWidth||520), dpr=Math.min(2,window.devicePixelRatio||1);
@@ -377,14 +440,60 @@ function renderHero(){
   $("#heroWrap").classList.toggle("dark",e.night||e.phase==="atardecer"||e.clima==="lluvia");
   const mb=$("#meBtn"); if(mb) mb.innerHTML=S.me&&me?av(S.me,38,"me"):`<span class="av ini me" style="width:38px;height:38px;font-size:15px">⚙</span>`;
 }
-function loop(t){ const anim=AMB.env().anim; if(t-lastDraw>(anim?40:60000)){ paintForest(t); paintHero(t); lastDraw=t; } raf=requestAnimationFrame(loop); }
+function loop(t){ const anim=AMB.env().anim; const growing=GA.some(g=>t-g.start<2600)||t-FA.start<3500; if(t-lastDraw>(anim||growing?40:60000)){ paintForest(t); paintHero(t); paintGarden(t); lastDraw=t; } raf=requestAnimationFrame(loop); }
 function startLoop(){ cancelAnimationFrame(raf); lastDraw=0; raf=requestAnimationFrame(loop); }
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) cancelAnimationFrame(raf); else startLoop(); });
 AMB.onChange(()=>{ renderHero(); renderMap(); lastDraw=0; });
+/* ---------- mi jardín: el progreso de tus propias plantas ---------- */
+let GA=[];
+function myPlants(){
+  if(!S.me) return [];
+  const out=[];
+  S.trueques.forEach(t=>{
+    if(t.autor===S.me) out.push({id:t.id+"a",especie:t.especie_a,campus:t.campus_a,partner:t.campus_b,fecha:t.fecha});
+    if(t.receptor_b&&t.receptor_b===S.me) out.push({id:t.id+"b",especie:t.especie_b,campus:t.campus_b,partner:t.campus_a,fecha:t.fecha});
+  });
+  out.forEach(p=>{ p.sp=species(p.especie); p.g=Math.min(4,(Date.now()-p.fecha)/DAY/2); p.stage=Math.floor(p.g); p.phase=hash(p.id)*6.28; });
+  return out.sort((a,b)=>b.fecha-a.fecha);
+}
+function dur(ms){ const h=Math.max(0,ms)/H; if(h<1) return `${Math.max(1,Math.round(h*60))} min`; if(h<24) return `${Math.round(h)} h`; const d=Math.floor(h/24), r=Math.round(h-d*24); return r?`${d} d ${r} h`:`${d} d`; }
+function renderGarden(){
+  const el=$("#garden"); if(!el) return; const ps=myPlants(), prev={}; GA.forEach(g=>prev[g.p.id]=g.start);
+  if(!ps.length){ GA=[]; el.innerHTML=`<div class="empty"><img class="pi-lg" src="${plantIcon("Girasol",56)}" alt=""><div><b style="color:var(--fg)">Aún no tienes plantas.</b><br>Cuando cierres tu primer trueque, aquí verás crecer tu semilla día a día: de brote a planta madura.</div></div>`; return; }
+  const now=performance.now();
+  GA=ps.map(p=>({p,start:prev[p.id]??now}));
+  el.innerHTML=ps.map((p,i)=>{ const names=stageNames(p.sp), st=p.stage, fr=p.g-st, nextAt=p.fecha+(st+1)*2*DAY;
+    return `<article class="gcard">
+      <canvas class="gcv" data-i="${i}" width="280" height="280" aria-label="${esc(p.sp.name)} en etapa ${names[st]}"></canvas>
+      <div class="gbody">
+        <div class="gname">${esc(p.sp.name)}</div>
+        <div class="gstage">${names[st]}${st<4?` · ${Math.round(fr*100)}%`:""}</div>
+        <div class="gbar"><i style="width:${st>=4?100:Math.round(fr*100)}%"></i></div>
+        <div class="gnext">${st<4?`${names[st+1]} en ${dur(nextAt-Date.now())}`:"¡Llegó a su etapa final!"}</div>
+        <ol class="gsteps">${names.map((n,k)=>`<li class="${k<st?"done":k===st?"now":""}" title="${n}"></li>`).join("")}</ol>
+        <div class="gmeta"><i class="cdot" style="--cc:${CAMPUS[p.campus]?.col};--ce:${CAMPUS[p.campus]?.edge}"></i>Trueque con ${esc(CAMPUS[p.partner]?.name||"")} · ${fecha(p.fecha)}</div>
+        <button class="btn ghost small" data-replay="${i}">Ver crecer</button>
+      </div></article>`; }).join("");
+}
+function paintGarden(t){
+  document.querySelectorAll(".gcv").forEach(cv=>{
+    const g=GA[+cv.dataset.i]; if(!g) return; const c=cv.getContext("2d"), W=cv.width;
+    c.setTransform(1,0,0,1,0,0); c.clearRect(0,0,W,W);
+    const night=AMB.env().night, gr=c.createRadialGradient(W/2,W*.55,W*.05,W/2,W*.55,W*.5);
+    gr.addColorStop(0,night?"rgba(242,164,19,.22)":"rgba(242,164,19,.28)"); gr.addColorStop(1,"rgba(242,164,19,0)"); c.fillStyle=gr; c.fillRect(0,0,W,W);
+    const pr=Math.max(0,Math.min(1,(t-g.start)/2400)), e=pr<1?1-Math.pow(1-pr,3):1, ga=Math.max(.001,g.p.g*e), st=Math.min(4,Math.floor(ga)), fr=ga-st;
+    c.translate(W/2,W*.86);
+    ell(c,0,4,W*.3,W*.075,0,night?"#3A2B22":"#8B5E3C"); ell(c,0,1,W*.27,W*.06,0,night?"#4A372B":"#A87346");
+    const k=W/(g.p.sp.kind==="pino"?54:58)*(st>=4?1:.82+.18*fr); c.scale(k,k);
+    drawPlant(c,{...g.p,stage:st},t,true);
+    if(pr<1&&fr<.2&&st>0) sparkle(c,t,g.p.id,8+st*7);
+  });
+}
 function renderForest(){
+  if(FA.campus!==S.forest){ FA.campus=S.forest; FA.start=performance.now(); lastDraw=0; }
   const counts={}; Object.keys(CAMPUS).forEach(k=>counts[k]=plants(k).length);
   const order=Object.keys(CAMPUS).sort((a,b)=>counts[b]-counts[a]);
-  $("#rank").innerHTML=Object.keys(CAMPUS).map(k=>`<button aria-pressed="${S.forest===k}" data-forest="${k}"><span class="medal">${order.indexOf(k)+1}.º</span><b>${counts[k]}</b>${CAMPUS[k].name}</button>`).join("");
+  $("#rank").innerHTML=Object.keys(CAMPUS).map(k=>`<button aria-pressed="${S.forest===k}" data-forest="${k}" style="--cc:${CAMPUS[k].col};--ce:${CAMPUS[k].edge}"><i class="cdot"></i><span class="medal">${order.indexOf(k)+1}.º</span><b>${counts[k]}</b>${CAMPUS[k].name}</button>`).join("");
   const ps=plants(S.forest), sp=new Set(ps.map(p=>p.sp.name)).size;
   $("#fCount").textContent=ps.length; $("#fLbl").textContent=ps.length===1?"planta":"plantas";
   $("#fName").innerHTML=`Bosque de <b>${esc(CAMPUS[S.forest].full)}</b><br>${sp} ${sp===1?"especie":"especies"}`;
@@ -392,11 +501,12 @@ function renderForest(){
   showInfo(); paintForest(performance.now());
 }
 const STAGE_NAMES=["Brote","Plántula","Planta","Florecida","Madura"], TREE_STAGES=["Brote","Plántula","Arbolito","Árbol joven","Árbol"];
+const stageNames=sp=>sp.kind==="arbol"||sp.kind==="pino"||sp.kind==="magnolia"?TREE_STAGES:STAGE_NAMES;
 function showInfo(){
   const p=S.sel, el=$("#pInfo");
   if(!p){ el.textContent=plants(S.forest).length?"Toca una planta para ver de qué trueque nació.":"Este bosque aún está vacío: el primer trueque cerrado de esta universidad planta su primera semilla."; return; }
-  const names=p.sp.kind==="arbol"?TREE_STAGES:STAGE_NAMES;
-  el.innerHTML=`<b>${p.sp.emoji} ${esc(p.sp.name)}</b> · ${names[p.stage]}<br>Trueque ${esc(CAMPUS[S.forest].name)} ↔ ${esc(CAMPUS[p.partner]?.name||"")} · ${fecha(p.fecha)}${p.demo?" · ejemplo":""}`;
+  const names=stageNames(p.sp);
+  el.innerHTML=`<img class="pi-sm" src="${plantIcon(p.sp.name,28)}" alt=""><b>${esc(p.sp.name)}</b> · ${names[p.stage]}<br>Trueque ${esc(CAMPUS[S.forest].name)} ↔ ${esc(CAMPUS[p.partner]?.name||"")} · ${fecha(p.fecha)}${p.demo?" · ejemplo":""}`;
 }
 function pickAt(ev){
   const cv=$("#forest"); if(!FL) return; const r=cv.getBoundingClientRect();
@@ -408,15 +518,15 @@ function pickAt(ev){
 async function saveForest(){
   const W=1080, Hh=1350, cv=document.createElement("canvas"); cv.width=W; cv.height=Hh; const c=cv.getContext("2d");
   c.fillStyle="#FFFFFF"; c.fillRect(0,0,W,Hh);
-  c.fillStyle="#F2A413"; c.fillRect(0,0,W,22);
+  c.fillStyle="#C62828"; c.fillRect(0,0,W,22); c.fillStyle="#F2A413"; c.fillRect(W*.78,0,W*.22,22);
   const logo=document.querySelector(".brand img"); try{ c.drawImage(logo,72,92,120,120); }catch(e){}
   const ps=plants(S.forest), sp=new Set(ps.map(p=>p.sp.name)).size;
-  c.fillStyle="#231F1F"; c.textAlign="left"; c.font="400 76px 'Instrument Serif', Georgia, serif"; c.fillText("Bosque "+CAMPUS[S.forest].name,214,160);
-  c.fillStyle="#6E6766"; c.font="500 32px 'Plus Jakarta Sans', sans-serif"; c.fillText(`${ps.length} plantas · ${sp} especies · SemillApp`,216,206);
+  c.fillStyle="#231F1F"; c.textAlign="left"; c.font="400 104px 'Great Vibes', cursive"; c.fillText("Bosque "+CAMPUS[S.forest].name,214,160);
+  c.fillStyle="#6E6766"; c.font="500 32px Jost, sans-serif"; c.fillText(`${ps.length} plantas · ${sp} especies · SemillApp`,216,206);
   c.save(); c.translate(0,300); const k=W/LW; c.scale(k,k); drawForest(c,S.forest,performance.now(),"#FFFFFF",null); c.restore();
   c.fillStyle="#231F1F"; c.fillRect(0,Hh-170,W,170);
-  c.fillStyle="#F2A413"; c.font="italic 400 52px 'Instrument Serif', Georgia, serif"; c.fillText("Cada trueque de semillas planta algo.",72,Hh-96);
-  c.fillStyle="#FFFFFF"; c.font="500 28px 'Plus Jakarta Sans', sans-serif"; c.fillText("UPCH · U Lima · PUCP · U Pacífico — Puntos Verdes",72,Hh-50);
+  c.fillStyle="#F2A413"; c.font="italic 600 50px 'Cormorant Garamond', Georgia, serif"; c.fillText("Cada trueque de semillas planta algo.",72,Hh-96);
+  c.fillStyle="#FFFFFF"; c.font="500 28px Jost, sans-serif"; c.fillText("UPCH · U Lima · PUCP · U Pacífico — Puntos Verdes",72,Hh-50);
   const blob=await new Promise(r=>cv.toBlob(r,"image/png"));
   try{ await S.A.saveFile(blob,`bosque-${S.forest}.png`); }catch(e){ if(e&&e.code!=="declined") toast("No se pudo guardar la imagen aquí."); }
 }
@@ -429,15 +539,21 @@ async function newSignal(){
   sheet(`<h3>Lanzar señal</h3>
     <div class="seg" id="seg"><button type="button" aria-pressed="true" data-t="tengo">Tengo semillas</button><button type="button" aria-pressed="false" data-t="busco">Busco semillas</button></div>
     <form id="f" style="display:flex;flex-direction:column;gap:12px">
-      <label for="f-esp">Especie<input id="f-esp" list="sp" required maxlength="40" placeholder="Ej. Girasol"></label><datalist id="sp">${SUGGEST.map(s=>`<option value="${s}">`).join("")}</datalist>
+      <label for="f-esp">Semillas de<select id="f-esp" required>${ESPECIES.map(s=>`<option>${s}</option>`).join("")}</select></label>
       <div class="row2"><label>Cantidad <small>opcional</small><input id="f-cant" maxlength="30" placeholder="20 semillas"></label>
       <label>Campus<select id="f-camp">${Object.entries(CAMPUS).map(([k,v])=>`<option value="${k}" ${k===defCampus?"selected":""}>${v.name}</option>`).join("")}</select></label></div>
-      <label><span id="f-cl">Cambio por</span><input id="f-cambio" maxlength="60" placeholder="Albahaca, tomate o lo que tengas"></label>
+      <label><span id="f-cl">Cambio por</span><select id="f-cambio"><option value="">Cualquiera de la lista</option>${ESPECIES.map(s=>`<option>${s}</option>`).join("")}</select></label>
+      <div class="ficha-hint" id="f-hint" hidden></div>
       <label>Duración<select id="f-dur"><option value="24">24 horas</option><option value="48">48 horas</option><option value="72">72 horas</option></select></label>
       <div class="actions"><button type="button" class="btn ghost" id="f-x">Cancelar</button><button class="btn gold" id="f-ok">Lanzar señal</button></div>
     </form>`);
   $("#seg").addEventListener("click",e=>{ const b=e.target.closest("button"); if(!b) return; tipo=b.dataset.t;
     $("#seg").querySelectorAll("button").forEach(x=>x.setAttribute("aria-pressed",x===b)); $("#f-cl").textContent=tipo==="tengo"?"Cambio por":"Ofrezco a cambio"; });
+  const hint=()=>{ const sp=species($("#f-esp").value), f=FICHAS[sp.name], el=$("#f-hint"); if(!f||!$("#f-esp").value.trim()){ el.hidden=true; return; }
+    el.hidden=false; el.innerHTML=`<img class="pi-sm" src="${plantIcon(sp.name,28)}" alt=""><div><b>${esc(sp.name)} · ${esc(f.nivel)}</b><br>${esc(f.consejo)}</div>`; };
+  $("#f-esp").addEventListener("change",hint);
+  $("#f").addEventListener("focusin",e=>{ if(e.target.id!=="f-esp") $("#f-hint").hidden=true; });
+  $("#f").addEventListener("change",e=>{ if(e.target.id!=="f-esp") $("#f-hint").hidden=true; });
   $("#f-x").onclick=closeSheet;
   $("#f").addEventListener("submit",async e=>{ e.preventDefault(); const now=Date.now();
     const doc={tipo,especie:$("#f-esp").value.trim(),cantidad:$("#f-cant").value.trim(),cambio:$("#f-cambio").value.trim(),campus:$("#f-camp").value,creado:now,expira:now+(+$("#f-dur").value)*H};
@@ -449,7 +565,8 @@ async function offer(id){
   if(!(await guard())) return; const s=S.senales.find(x=>x.id===id); if(!s) return;
   sheet(`<h3>${s.tipo==="tengo"?"Ofrecer a cambio de":"Tengo"} ${esc(s.especie)}</h3>
     <form id="f" style="display:flex;flex-direction:column;gap:12px">
-      <label>${s.tipo==="tengo"?"¿Qué ofreces?":"¿Qué le darías?"}<input id="o-of" required maxlength="60" placeholder="${s.tipo==="tengo"?"Ej. Albahaca, 1 sobre":"Ej. Lavanda, 10 semillas"}"></label>
+      <div class="row2"><label>${s.tipo==="tengo"?"Ofreces semillas de":"Le darías semillas de"}<select id="o-of">${(s.tipo==="busco"?[s.especie]:ESPECIES).map(x=>`<option ${s.cambio===x?"selected":""}>${x}</option>`).join("")}</select></label>
+      <label>Cantidad <small>opcional</small><input id="o-cant" maxlength="20" placeholder="10 semillas"></label></div>
       <div class="row2"><label>Tu campus<select id="o-camp">${Object.entries(CAMPUS).map(([k,v])=>`<option value="${k}" ${k===(((perfil(S.me)||{}).campus||S.A.defaultCampus?.())||s.campus)?"selected":""}>${v.name}</option>`).join("")}</select></label>
       <label>Tu WhatsApp <small>solo para coordinar</small><input id="o-tel" inputmode="tel" required maxlength="15" placeholder="987 654 321"></label></div>
       <p class="note">${esc(S.A.phoneNote)}</p>
@@ -458,7 +575,7 @@ async function offer(id){
   $("#f-x").onclick=closeSheet;
   $("#f").addEventListener("submit",async e=>{ e.preventDefault();
     const tel=$("#o-tel").value.replace(/\D/g,""); if(tel.length<9){ toast("Revisa tu número: deben ser 9 dígitos."); return; }
-    const doc={senal_id:s.id,ofrece:$("#o-of").value.trim(),campus:$("#o-camp").value,creado:Date.now(),estado:"pendiente",telefono:tel};
+    const doc={senal_id:s.id,ofrece:$("#o-of").value+($("#o-cant").value.trim()?` (${$("#o-cant").value.trim()})`:""),campus:$("#o-camp").value,creado:Date.now(),estado:"pendiente",telefono:tel};
     $("#f-ok").disabled=true;
     try{ await S.A.add("ofertas",doc); closeSheet(); toast("Oferta enviada"); }catch(err){ fail(err); $("#f-ok").disabled=false; } });
 }
@@ -468,11 +585,11 @@ async function complete(oid){
   const a = s.tipo==="tengo" ? o.ofrece : s.especie;      // lo que recibe el campus de la señal
   const b = s.tipo==="tengo" ? s.especie : (s.cambio||o.ofrece); // lo que recibe el campus de quien ofertó
   try{
-    await S.A.add("trueques",{oferta_id:o.id,campus_a:s.campus,especie_a:species(a).name,campus_b:o.campus,especie_b:species(b).name,fecha:Date.now()});
+    await S.A.add("trueques",{oferta_id:o.id,campus_a:s.campus,especie_a:species(a).name,campus_b:o.campus,especie_b:species(b).name,fecha:Date.now(),receptor_b:o.autor||null});
     await S.A.update("ofertas",oid,{estado:"completada"});
     S.forest=s.campus; S.sel=null; render();
-    toast(`Se plantó ${species(a).name.toLowerCase()} en el bosque de ${CAMPUS[s.campus].name}`);
-    document.getElementById("bosques").scrollIntoView({behavior:reduce()?"auto":"smooth"});
+    toast(`¡Se plantó tu ${species(a).name.toLowerCase()}! Mira cómo crece en Mi jardín`);
+    document.getElementById("jardin").scrollIntoView({behavior:reduce()?"auto":"smooth"});
   }catch(e){ fail(e); }
 }
 async function del(id){ try{ await S.A.remove("senales",id); toast("Señal borrada"); }catch(e){ fail(e); } }
@@ -484,10 +601,11 @@ function fail(err){
 }
 
 /* ---------- ciclo ---------- */
-function render(){ renderHero(); renderChips(); renderMap(); renderFeed(); renderForest(); }
+function render(){ renderHero(); renderChips(); renderMap(); renderFeed(); renderGarden(); renderForest(); }
 let pend=0; function soft(){ clearTimeout(pend); pend=setTimeout(()=>{ if(sheetOpen()) renderForest(); else render(); },40); }
 document.addEventListener("click",e=>{
   const f=e.target.closest("[data-f]"); if(f){ S.filter=(S.filter===f.dataset.f&&f.dataset.f!=="all")?"all":f.dataset.f; render(); return; }
+  const rp=e.target.closest("[data-replay]"); if(rp){ const g=GA[+rp.dataset.replay]; if(g){ g.start=performance.now(); lastDraw=0; } return; }
   const fo=e.target.closest("[data-forest]"); if(fo){ S.forest=fo.dataset.forest; S.sel=null; renderForest(); return; }
   const a=e.target.closest("[data-act]"); if(!a) return; const id=a.dataset.id;
   ({new:newSignal,offer:()=>offer(id),accept:()=>accept(id),done:()=>complete(id),del:()=>del(id)})[a.dataset.act]?.();
@@ -631,24 +749,25 @@ window.SemillAppLocal=function(opts){
   const T=(a,ea,b,eb,days)=>({id:id("t"),campus_a:a,especie_a:ea,campus_b:b,especie_b:eb,fecha:now-days*D,autor:"demo"});
   const data={
     senales:[
-      {id:"d1",tipo:"tengo",especie:"Girasol",cantidad:"20 semillas",cambio:"Albahaca o tomate",campus:"pucp",creado:now-3*H,expira:now+21*H,autor:"demo"},
-      {id:"d2",tipo:"busco",especie:"Lavanda",cantidad:"",cambio:"Ají amarillo",campus:"upch",creado:now-6*H,expira:now+42*H,autor:"demo"},
-      {id:"d3",tipo:"tengo",especie:"Maíz morado",cantidad:"1 mazorca",cambio:"Quinua o kiwicha",campus:"ulima",creado:now-1*H,expira:now+23*H,autor:"demo"},
-      {id:"d4",tipo:"tengo",especie:"Tomate cherry",cantidad:"1 sobre",cambio:"Lo que tengas",campus:"up",creado:now-22*H,expira:now+2*H,autor:"demo"},
-      {id:"d5",tipo:"tengo",especie:"Culantro",cantidad:"2 sobres",cambio:"Girasol",campus:"upch",creado:now-2*H,expira:now+46*H,autor:"demo"},
-      {id:"d6",tipo:"busco",especie:"Palta",cantidad:"1 pepa",cambio:"Hierbabuena",campus:"ulima",creado:now-5*H,expira:now+67*H,autor:"demo"}
+      {id:"d1",tipo:"tengo",especie:"Girasol",cantidad:"20 semillas",cambio:"Rosa o tulipán",campus:"pucp",creado:now-3*H,expira:now+21*H,autor:"demo"},
+      {id:"d2",tipo:"busco",especie:"Orquídea",cantidad:"",cambio:"Semillas de rosa",campus:"upch",creado:now-6*H,expira:now+42*H,autor:"demo"},
+      {id:"d3",tipo:"tengo",especie:"Rosa",cantidad:"15 semillas",cambio:"Girasol enano (semillas)",campus:"ulima",creado:now-1*H,expira:now+23*H,autor:"demo"},
+      {id:"d4",tipo:"tengo",especie:"Tulipán",cantidad:"10 semillas",cambio:"Lo que tengas",campus:"up",creado:now-22*H,expira:now+2*H,autor:"demo"},
+      {id:"d5",tipo:"busco",especie:"Pino limón",cantidad:"",cambio:"Semillas de girasol",campus:"upch",creado:now-2*H,expira:now+46*H,autor:"demo"},
+      {id:"d6",tipo:"tengo",especie:"Orquídea",cantidad:"1 sobre",cambio:"Pino limón o rosa",campus:"pucp",creado:now-5*H,expira:now+67*H,autor:"demo"}
     ],
     ofertas:[
-      {id:"o1",senal_id:"d1",ofrece:"Albahaca (1 sobre)",campus:"up",autor:"demo",creado:now-2*H,estado:"pendiente"},
-      {id:"o2",senal_id:"d3",ofrece:"Kiwicha",campus:"pucp",autor:"demo",creado:now-.5*H,estado:"aceptada"}
+      {id:"o1",senal_id:"d1",ofrece:"Rosa (10 semillas)",campus:"up",autor:"demo",creado:now-2*H,estado:"pendiente"},
+      {id:"o2",senal_id:"d3",ofrece:"Girasol enano (semillas)",campus:"pucp",autor:"demo",creado:now-.5*H,estado:"aceptada"}
     ],
     trueques:[
-      T("upch","Girasol","pucp","Albahaca",12),T("upch","Tomate","ulima","Maíz",10),T("upch","Palta","up","Culantro",9),
-      T("upch","Girasol","upch","Lavanda",7),T("upch","Quinua","pucp","Ají amarillo",5),T("upch","Hierbabuena","up","Girasol",3),
-      T("upch","Rocoto","ulima","Kiwicha",2),T("upch","Lechuga","pucp","Tomate",1),T("upch","Limón","ulima","Zapallo",0.2),
-      T("pucp","Girasol","ulima","Albahaca",8),T("pucp","Maíz","up","Fresa",6),T("pucp","Lavanda","ulima","Palta",4),
-      T("pucp","Culantro","up","Quinua",1.5),T("ulima","Girasol","up","Mango",11),T("ulima","Tomate","pucp","Huacatay",3),
-      T("up","Zanahoria","pucp","Kiwicha",2.5),T("up","Ají","ulima","Rosa",0.6)
+      T("upch","Girasol","pucp","Rosa",12),T("upch","Rosa","ulima","Girasol",10),T("upch","Pino limón","up","Tulipán",9),
+      T("upch","Orquídea","upch","Girasol",7),T("upch","Tulipán","pucp","Orquídea",5),T("upch","Girasol","up","Rosa",3),
+      T("upch","Pino limón","ulima","Pino limón",2),T("upch","Orquídea","pucp","Girasol",1),T("upch","Girasol","ulima","Tulipán",0.2),
+      T("pucp","Rosa","ulima","Girasol",8),T("pucp","Pino limón","up","Rosa",6),T("pucp","Tulipán","ulima","Orquídea",4),
+      T("pucp","Pino limón","up","Pino limón",1.5),T("ulima","Rosa","up","Girasol",11),T("ulima","Orquídea","pucp","Tulipán",3),
+      T("up","Girasol","pucp","Rosa",2.5),T("up","Tulipán","ulima","Pino limón",0.6),
+      {...T("upch","Girasol","pucp","Rosa",5.3),autor:"local"},{...T("upch","Orquídea","ulima","Tulipán",0.7),autor:"local"},{...T("upch","Pino limón","up","Girasol",8.6),autor:"local"}
     ],
     perfiles:[]
   };
